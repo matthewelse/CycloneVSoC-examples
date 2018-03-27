@@ -9,6 +9,10 @@ available. This is intentional in order to make a guide that will result in an u
 case there are newer versions, you are free to employ them, but we cannot assure the system
 will build correctly.*
 
+   NOTE:
+   Notes in the parent fork of this repository fail because of a git commit SHA not being found. These
+   notes are modified to work around that.
+
 ============
 Requirements
 ============
@@ -293,7 +297,7 @@ editor and change the meta-altera entry to:
 
 .. code-block:: guess
 
-   <project name="kraj/meta-altera" path="layers/meta-altera" remote="github" revision="0c6e036fdfec58b69903a10e886a9dfae8fe4c9f" upstream="master"/>
+   <project name="kraj/meta-altera" path="layers/meta-altera" remote="github" revision="e691a8386236ab01ca52626b65f33b0747e86007" upstream="master"/>
 
 Next, download all the layers:
 
@@ -315,8 +319,10 @@ file. Open this file in a text editor and add the following lines:
 
    KERNEL_DEVICETREE = "socfpga_cyclone5_de0_sockit.dtb"
    IMAGE_FSTYPES += "socfpga-sdimg"
-   PREFERRED_PROVIDER_virtual/kernel = "linux-altera"
-   PREFERRED_VERSION_linux-altera = "4.7%"
+   PREFERRED_PROVIDER_virtual/kernel = "linux-altera-ltsi"
+   PREFERRED_VERSION_linux-altera = "4.9%"
+
+*NOTE: should that have been* ``PREFERRED_VERSION_linux-altera-ltsi``?
 
 Once the configuration is done, Angstrom can be built. First, build the kernel:
 
