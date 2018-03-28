@@ -181,7 +181,7 @@ sizes (for example, extending the root filesystem partition) with gparted.
 .. code-block:: bash
 
    sudo dd if=/dev/zero of=sdcard.img bs=512M count=1  # Creates an empty card image
-   sudo losetup --show –f sdcard.img                   # Sets up a loopback device to manipulate it
+   sudo losetup /dev/loop0 sdcard.img                   # Sets up a loopback device to manipulate it
    sudo fdisk /dev/loop0                               # Starts partition utility
 
 First we will create the preloader partition. Use the "n" command, and select the following options:
@@ -193,7 +193,7 @@ First we will create the preloader partition. Use the "n" command, and select th
 
 By default, fdisk creates "Linux" type partitions. Since we need RAW type, we must
 change it with the "t" command. Partition 3 should be autoselected since it is the only one. When
-prompted for a new type, time "a2". It will show up as "unknown".
+prompted for a new type, type **a2**. It will show up as "unknown".
 
 Next we will create the root filesystem partition. Use the "n" command again, and select the
 following options:
@@ -234,7 +234,7 @@ Next, create the FAT filesystem in the FAT partition. In order to do this, execu
 
 .. code-block:: bash
 
-   sudo mkfs –t vfat /dev/loop0p1
+   sudo mkfs.vfat /dev/loop0p1
 
 Now mount the partition, and copy U-Boot and FPGA files inside this partition.
 
@@ -244,6 +244,16 @@ Now mount the partition, and copy U-Boot and FPGA files inside this partition.
    sudo mount /dev/loop0p1 ./temp_mount
    sudo cp software/u-boot-socfpga/u-boot.img software/u-boot.scr soc_system.rbf temp_mount
    sync
+
+If you do list the files in temp mount, you should see the following:
+
+.. code-block:: bash
+   > ls temp_mount/
+   soc_system.rbf  u-boot.img  u-boot.scr
+
+Finally, unmount the temporary mount point.
+
+.. code-block:: bash
    sudo umount temp_mount
 
 For the last partition, create the EXT4 filesystem. By default, this filesystem gets created with
@@ -252,8 +262,9 @@ disable this option. The complete commands are the following:
 
 .. code-block:: bash
 
-   sudo mkfs.ext4 /dev/loop0p2           # Create filesystem
-   tune2fs -O ^huge_file /dev/loop0p2    # Disable huge_file feature
+   sudo mkfs.ext4 /dev/loop0p2                # Create filesystem
+   sudo tune2fs -O ^huge_file /dev/loop0p2    # Disable huge_file feature
+   sudo e2fsck -f /dev/loop0p2                # should pass :)
 
 After all the partitions are set up, it is time to burn the image to an SD card. Plug the SD card,
 identify its device name with the "lsblk" command, and run the following commands:
@@ -262,6 +273,10 @@ identify its device name with the "lsblk" command, and run the following command
 
    sudo dd if=sdcard.img of=/dev/XXX bs=2048
    sync
+
+*Alternatively, if building on a virtual machine, copy the sdcard.img to the host and use* etcher_.
+
+.. _etcher: https://www.etcher.io/
 
 When the SD card is burned, the initial booting stages can be tested. Connect the device to the
 computer via the serial port. Open a putty serial console at 115200 bauds, and start the device. First, the
@@ -345,12 +360,19 @@ Last, build the SDK for this system:
 Once all builds are complete, the built files can be found in the "/deploy/glibc/images/" folder.
 First, copy the kernel image and the device tree blob (remember to rename it "soc_system.dtb" as
 indicated in the U-Boot script) to the FAT partition. Next, extract the root filesystem in the
-EXT4 folder. If everything has worked as intended, the device should boot correctly.
+EXT4 folder:
+
+.. code-block:: bash
+   sudo umount temp_mount
+   sudo mount /dev/loop0p2 ./temp_mount
+   sudo tar xvf angstrom-manifests/deploy/glibc/images/cyclone5/console-image-cyclone5.tar.xz -C temp_mount/
+   sync
+
+If everything has worked as intended, the device should boot correctly.
 
 To use the SDK, run the SDK script, which will extract the SDK files in the location you provide.
 This SDK contains all the required files required to develop applications and kernel modules to be run in the
 device.
-
 
 ============
 MAC Spoofing
